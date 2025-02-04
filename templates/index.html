@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNIST Digit Recognizer</title>
+    <style>
+        body { text-align: center; }
+        canvas { border: 1px solid white; background: black; }
+    </style>
+</head>
+<body>
+    <h1>Draw a digit (0-9)</h1>
+    <canvas id="canvas" width="280" height="280"></canvas>
+    <br>
+    <button id="clearButton">Clear</button>
+    <button id="predictButton">Predict</button>
+    <h2 id="result"></h2>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        // Initialize black background
+        context.fillStyle = "black";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        let drawing = false;
+
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            context.beginPath();
+            context.moveTo(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            context.lineTo(e.offsetX, e.offsetY);
+            context.strokeStyle = "white"; // Draw in white
+            context.lineWidth = 15;
+            context.lineCap = "round";
+            context.stroke();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+            context.closePath();
+        });
+
+        document.getElementById('clearButton').addEventListener('click', () => {
+            context.fillStyle = "black"; // Reset background to black
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('result').innerText = '';
+        });
+
+        document.getElementById('predictButton').addEventListener('click', async () => {
+            const dataUrl = canvas.toDataURL('image/png');  
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: dataUrl })
+            });
+
+            const result = await response.json();
+            document.getElementById('result').innerText = `Predicted Digit: ${result.predicted_digit}`;
+        });
+    </script>
+</body>
+</html>
