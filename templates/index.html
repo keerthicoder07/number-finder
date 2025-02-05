@@ -5,21 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MNIST Digit Recognizer</title>
     <style>
-        body { text-align: center; }
-        canvas { border: 1px solid white; background: black; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #fff;
+        }
+        canvas {
+            border: 2px solid #ddd;
+            background: black;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 5%;
+            margin-bottom: 20px;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5%;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        #clearButton {
+            background-color: #dc3545;
+        }
+        #clearButton:hover {
+            background-color: #c82333;
+        }
+        #result {
+            font-size: 1.5rem;
+            color: #28a745;
+            margin-top: 20px;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-top: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <h1>Draw a digit (0-9)</h1>
+    <h1>Draw a Digit (0-9)</h1>
     <canvas id="canvas" width="280" height="280"></canvas>
-    <br>
-    <button id="clearButton">Clear</button>
-    <button id="predictButton">Predict</button>
+    <div class="buttons">
+        <button id="clearButton">Clear</button>
+        <button id="predictButton">Predict</button>
+    </div>
+    <div class="loader" id="loader"></div>
     <h2 id="result"></h2>
 
     <script>
         const canvas = document.getElementById('canvas');
         const context = canvas.getContext('2d');
+        const loader = document.getElementById('loader');
+        const result = document.getElementById('result');
 
         // Initialize black background
         context.fillStyle = "black";
@@ -50,19 +119,27 @@
         document.getElementById('clearButton').addEventListener('click', () => {
             context.fillStyle = "black"; // Reset background to black
             context.fillRect(0, 0, canvas.width, canvas.height);
-            document.getElementById('result').innerText = '';
+            result.innerText = '';
         });
 
         document.getElementById('predictButton').addEventListener('click', async () => {
+            loader.style.display = 'block';
+            result.innerText = '';
             const dataUrl = canvas.toDataURL('image/png');  
-            const response = await fetch('/predict', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: dataUrl })
-            });
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: dataUrl })
+                });
 
-            const result = await response.json();
-            document.getElementById('result').innerText = `Predicted Digit: ${result.predicted_digit}`;
+                const prediction = await response.json();
+                result.innerText = `Predicted Digit: ${prediction.predicted_digit}`;
+            } catch (error) {
+                result.innerText = 'Error predicting digit';
+            } finally {
+                loader.style.display = 'none';
+            }
         });
     </script>
 </body>
